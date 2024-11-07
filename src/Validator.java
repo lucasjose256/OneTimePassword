@@ -22,15 +22,15 @@ public class Validator {
 
             System.out.print("Digite sua senha semente: ");
             String senha = scanner.nextLine();
+            System.out.print("Digite seu sal");
 
-            String senhaHashed = hashSenha(senha +SALT_FIXO);
-            String senhaSalt = rehashComSalt(senhaHashed, SALT_FIXO);
+            String senhaSalt =scanner.nextLine();
 
 
                 System.out.println("Inicializando validador de senha.");
                 Thread threadPeriodica = new Thread(() -> {
                     try {
-                        threadGeraSenhaMinuto(senha);
+                        threadGeraSenhaMinuto(senha,senhaSalt);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -60,9 +60,9 @@ public class Validator {
         }
     }
 
-    private static void threadGeraSenhaMinuto(String seed) throws NoSuchAlgorithmException {
+    private static void threadGeraSenhaMinuto(String seed,String sal) throws NoSuchAlgorithmException {
         LocalDateTime agora = LocalDateTime.now();
-        SENHAS_VALIDAS = geradorSenhaOTP(seed, agora);
+        SENHAS_VALIDAS = geradorSenhaOTP(seed,sal, agora);
         System.out.println("Horário atualizado: " + agora.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         imprimeTabelaSenhas();
 
@@ -70,7 +70,7 @@ public class Validator {
         while (true) {
             agora = LocalDateTime.now();
             if (agora.getMinute() != minutoAnterior) {
-                SENHAS_VALIDAS = geradorSenhaOTP(seed, agora);
+                SENHAS_VALIDAS = geradorSenhaOTP(seed,sal, agora);
                 System.out.println("Horário atualizado: " + agora.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                 imprimeTabelaSenhas();
                 minutoAnterior = agora.getMinute();
@@ -83,13 +83,14 @@ public class Validator {
         }
     }
 
-    private static List<Map<String, Object>> geradorSenhaOTP(String seed, LocalDateTime agora) throws NoSuchAlgorithmException {
+    private static List<Map<String, Object>> geradorSenhaOTP(String seed,String salt, LocalDateTime agora) throws NoSuchAlgorithmException {
         List<Map<String, Object>> listaSenhas = new ArrayList<>();
         String timeFactor = agora.format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
-
+        seed=hashSenha(seed);
+        salt=hashSenha(salt);
         for (int i = 0; i < 5; i++) {
             Map<String, Object> senhaMap = new HashMap<>();
-            senhaMap.put("senha", hashSenha(seed + SALT_FIXO+timeFactor + i).substring(0, 8));
+            senhaMap.put("senha", hashSenha(seed + salt+timeFactor + i).substring(0, 8));
             senhaMap.put("valido", true);
             senhaMap.put("indice", i);  // Índice para controlar a ordem
             listaSenhas.add(senhaMap);
